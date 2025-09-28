@@ -348,3 +348,34 @@ class StockDataRequest(BaseModel):
     exchange_symbol: str
     ticker: str
     id: Optional[str] = None
+
+
+class UserPreferences(Document):
+    """User preference settings for response formats"""
+    user_id: PydanticObjectId = Field(...)
+    preferred_response_type: Literal["visual", "text", "mixed"] = "mixed"
+    confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    last_detection_text: Optional[str] = None
+    detection_history: List[Dict[str, Any]] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    class Settings:
+        collection = "user_preferences"
+
+
+class PersonalizationLog(Document):
+    """Log of preference detection events"""
+    user_id: PydanticObjectId = Field(...)
+    session_id: str = Field(...)
+    message_id: str = Field(...)
+    input_text: str = Field(...)
+    detected_preference: Literal["visual", "text", "mixed"] = Field(...)
+    confidence_score: float = Field(ge=0.0, le=1.0)
+    keywords_found: List[str] = Field(default_factory=list)
+    ai_reasoning: Optional[str] = None
+    keyword_scores: Dict[str, float] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    class Settings:
+        collection = "personalization_logs"

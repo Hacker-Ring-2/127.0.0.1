@@ -1,39 +1,31 @@
 // LoginPage.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Loader, Check, X, EyeOff, Eye } from 'lucide-react';
+import { Loader, EyeOff, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ApiServices from '@/services/ApiServices';
 import { LoginFormData } from '@/types/auth-types';
-import { useAuthStore } from '@/store/useZustandStore';
 import Cookies from 'js-cookie';
 import { OtpPasswordResetDialog } from '../components/ResetPassword';
 import Image from 'next/image';
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
-  const [isLoginLoading, setIsLogInLoading] = useState(false);
 
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<LoginFormData>();
 
   const router = useRouter();
-
-  // watch the password field
-  const password = watch('password', '');
-  // has the user started typing?
-  const isTouched = password.length > 0;
 
   // define each rule
   // const rules = {
@@ -52,11 +44,12 @@ const LoginPage: React.FC = () => {
     try {
       const response = await ApiServices.login(data.email, data.password);
       toast.success('Login successful');
-      Cookies.set('access_token', response.data.access_token);
+      Cookies.set('access_token', response.access_token);
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
       toast.error(
-        err?.response?.data.detail || 'Invalid email or password or account does not exist.'
+        error?.response?.data?.detail || 'Invalid email or password or account does not exist.'
       );
     } finally {
       setIsLoading(false);
@@ -146,7 +139,7 @@ const LoginPage: React.FC = () => {
                   'w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#4B9770] hover:bg-[#408160] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4B9770] disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
-                {isLoginLoading && <Loader className="w-5 h-5 mr-2 animate-spin" />}
+                {isLoading && <Loader className="w-5 h-5 mr-2 animate-spin" />}
                 Continue
               </button>
             </div>
@@ -155,7 +148,7 @@ const LoginPage: React.FC = () => {
           {/* ——— Signup Link ——— */}
           <div className="mt-5 text-center">
             <p className="text-neutral-150">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="font-medium text-[#4B9770] hover:text-[#408160]">
                 Sign up
               </Link>

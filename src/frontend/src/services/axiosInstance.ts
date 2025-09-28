@@ -1,6 +1,5 @@
 import { getCookie } from '@/utils/getCookie';
 import axios, { AxiosInstance } from 'axios';
-import Cookies from 'js-cookie';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || '';
 

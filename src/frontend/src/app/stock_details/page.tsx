@@ -69,7 +69,7 @@ export default function ChartInsights() {
         messageId,
         data?.[0]?.realtime?.name || ''
       );
-      setPredictedChartData(response.data.combined_chart);
+      setPredictedChartData((response as any).combined_chart || []);
       const res = await ApiServices.fetchRelatedQueries(payload);
       setQuestions(res.related_queries);
     } catch (error) {

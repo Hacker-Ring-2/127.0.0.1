@@ -206,7 +206,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     try {
       const response = await ApiServices.getSessionHistory(page, limit, undefined);
 
-      setIsLastPage(response.data.has_more);
+      setIsLastPage((response as any).has_more);
 
       setSessionHistoryData((prev) => {
         return handlePaginationData(response, prev);

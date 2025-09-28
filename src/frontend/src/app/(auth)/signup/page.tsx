@@ -1,18 +1,16 @@
 // SignupPage.tsx
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Loader, Check, X, Search, EyeOff, Eye } from 'lucide-react';
+import { Loader, Check, X, EyeOff, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ApiServices from '@/services/ApiServices';
 import { SignupFormData } from '@/types/auth-types';
-import { useRef } from 'react';
 import Cookies from 'js-cookie';
-import { API_ENDPOINTS } from '@/services/endpoints';
 import OTPDialog, { IRegisterationData } from './components/OTPDialog';
 import Image from 'next/image';
 
@@ -33,12 +31,8 @@ const SignupPage: React.FC = () => {
   const password = watch('password', '');
   const confirm = watch('confirmPassword', '');
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [otp, setOtp] = useState('');
 
-
-  const [search, setSearch] = useState('');
-  const [isSignUpLoading, setisSignUpLoading] = useState(false);
   const [openOTPDialog, setOpenOTPDialog] = useState(false);
   const [registerationData, setRegisterationData] = useState<IRegisterationData | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +74,7 @@ const SignupPage: React.FC = () => {
       } else {
         router.push('/'); // Or your main app page for existing users
       }
-    } catch (error) {
+    } catch {
       toast.error('Could not verify user status. Please try again.');
     } finally {
       // Reset all loading states
@@ -104,9 +98,10 @@ const SignupPage: React.FC = () => {
         password
       );
       setOpenOTPDialog(true);
-      setOtp(response?.data?.OTP)
-    } catch (error: any) {
-      toast.error(error?.response?.data.detail || 'Something went wrong. Please try again.');
+      setOtp(response?.OTP || '')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
       reset();
@@ -382,7 +377,7 @@ const SignupPage: React.FC = () => {
                   'w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#4B9770] hover:bg-[#408160] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4B9770] disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
-                {isSignUpLoading && <Loader className="w-5 h-5 mr-2 animate-spin" />}
+                {isLoading && <Loader className="w-5 h-5 mr-2 animate-spin" />}
                 Continue
               </button>
             </div>

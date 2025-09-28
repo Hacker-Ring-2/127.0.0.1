@@ -7,7 +7,7 @@ from typing import List, Literal, Type, Dict
 import os 
 from pydantic import BaseModel, Field
 from src.ai.ai_schemas.tool_structured_input import GeocodeInput
-from typing import Optional, List, Literal, Tuple, Dict, Union
+from typing import Optional, List, Literal, Tuple, Dict
 from src.ai.tools.graph_gen_tool_system_prompt import SYSTEM_PROMPT_STRUCT_OUTPUT
 # from langchain_litellm import ChatLiteLLM
 # from langchain_community.chat_models import ChatLiteLLM
@@ -98,8 +98,8 @@ llm = get_llm(model_name=ggc.MODEL, temperature=ggc.TEMPERATURE)
 
 class SingleChartData(BaseModel):
     legend_label: str = Field(description="The legend label for the given data.")
-    x_axis_data: List[Union[float, str]] = Field(description="List of values for the x-axis of the chart")
-    y_axis_data: List[float] = Field(description="List of values for the y-axis of the chart")
+    x_axis_data: List[str] = Field(description="List of values for the x-axis of the chart (will be converted to appropriate types during rendering)")
+    y_axis_data: List[float] = Field(description="List of numerical values for the y-axis of the chart")
     color: str = Field(description="Color of the chart in Hex Color Code. Use only the color mentioned: `#1537ba`, `#00a9f4`, `#051c2c`, `#82a6c9`, `#99e6ff`, `#14b8ab`, `#9c217d`", max_length=7, min_length=7)
 
 

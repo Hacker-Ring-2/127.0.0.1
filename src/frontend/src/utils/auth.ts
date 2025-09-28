@@ -2,7 +2,6 @@ import { axiosInstance } from '@/services/axiosInstance';
 import { useAuthStore } from '@/store/useZustandStore';
 import Cookies from 'js-cookie';
 import { getCookie } from './getCookie';
-import ApiServices from '@/services/ApiServices';
 
 export const verifyToken = async (): Promise<boolean> => {
   try {
@@ -19,15 +18,24 @@ export const verifyToken = async (): Promise<boolean> => {
     }
 
     // Verify token with API
+    console.log('Attempting to verify token with backend...');
+    console.log('BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL);
     const user = await axiosInstance.get('/get_user_info');
-    useAuthStore
-      .getState()
-      .setUser(user.data.full_name, user.data.email, user.data.profile_picture);
+    console.log('User data received:', user.data);
+    
+    // Check if user data exists and has required fields
+    if (user.data && user.data.full_name && user.data.email) {
+      useAuthStore
+        .getState()
+        .setUser(user.data.full_name, user.data.email, user.data.profile_picture || '');
+    } else {
+      throw new Error('Invalid user data received from API');
+    }
     return true;
   } catch (error) {
+    console.error('Token verification failed with full error:', error);
     Cookies.remove('access_token');
     useAuthStore.getState().resetUser();
-    console.error('Token verification failed:', error);
     return false;
   }
 };

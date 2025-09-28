@@ -1,17 +1,13 @@
 'use client';
 
-import { FileText, Loader2, Paperclip, Settings2, X } from 'lucide-react';
+import { FileText, Loader2, X } from 'lucide-react';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { SearchMode, useMessageStore } from '@/store/useZustandStore';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { IPreviewFileData, IUploadFile } from '@/app/(chats)/chat/component/SpecificChat';
-import { toast } from 'sonner';
-import { uniqueId } from 'lodash';
 import { TfiArrowUp } from 'react-icons/tfi';
-import ApiServices from '@/services/ApiServices';
 import FilePreviewDialog from '@/app/(chats)/chat/component/DocumentPreviewModal';
 import { SettingsDropdown } from '../ui/mode-selection';
 
@@ -24,7 +20,7 @@ export type Message = {
   content: string | string[];
   sender?: 'user' | 'assistant';
   type?: string;
-  actionData?: any;
+  actionData?: Record<string, unknown>;
   researchData?: researchData[] | [];
   messageId?: string;
 };
@@ -41,7 +37,7 @@ const ChatArea = () => {
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const [uploadedFileData, setUploadedFileData] = useState<IUploadFile[] | []>([]);
 
-  const [defaultPrompts, setDefaultPrompts] = useState<string[] | []>([
+  const [defaultPrompts] = useState<string[]>([
     '⚖️ Risk assessment',
     '🌐 Economic indicators',
     '🔍 Market Sentiment',
@@ -50,23 +46,23 @@ const ChatArea = () => {
   ]);
   const [openPreviewDialog, setOpenPreviewDialog] = useState(false);
   const [currentPreviewFile, setCurrentPreviewFile] = useState<IPreviewFileData | null>(null);
-  const docRef = useRef<HTMLInputElement | null>(null);
+
   const MAX_HEIGHT =
     uploadedFileData.length > 3 ? 372 : uploadedFileData.length > 0 ? 260 + 47 : 260;
 
-  const handleAutoTextAreaResize = (ta: HTMLTextAreaElement) => {
+  const handleAutoTextAreaResize = useCallback((ta: HTMLTextAreaElement) => {
     ta.style.height = 'auto';
     const scrollH = ta.scrollHeight;
     const newH = Math.min(scrollH, MAX_HEIGHT);
     ta.style.height = `${newH}px`;
-  };
+  }, [MAX_HEIGHT]);
 
   useLayoutEffect(() => {
     if (textAreaRef.current) {
       handleAutoTextAreaResize(textAreaRef.current);
     }
     resetSearchMode();
-  }, []);
+  }, [handleAutoTextAreaResize, resetSearchMode]);
 
   const sendMessage = async () => {
     const message = query.trim();
@@ -85,11 +81,7 @@ const ChatArea = () => {
     setSearchMode(value);
   };
 
-  const openDocUpload = () => {
-    if (docRef.current) {
-      docRef.current.click();
-    }
-  };
+
 
   // const handleDocUploadChange = async (file: FileList | null) => {
   //   if (file) {
@@ -186,7 +178,7 @@ const ChatArea = () => {
           <div className="sm:flex hidden w-full h-full flex-col justify-center items-center">
             <div className={cn(`text-center flex items-center justify-center`)}>
               <h1 className="text-[#0A0A0A] text-center text-[52px] font-normal leading-normal">
-                What's on your mind today?
+                What&apos;s on your mind today?
               </h1>
             </div>
             <div className="sm:my-6 w-full box-border pl-[20px] pr-[20px] bg-[var(--primary-main-bg)]">
@@ -197,7 +189,7 @@ const ChatArea = () => {
               >
                 {uploadedFileData.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    {uploadedFileData.map((fileData, index) => (
+                    {uploadedFileData.map((fileData) => (
                       <div
                         onClick={() =>
                           handleOpenFileDialog(
@@ -336,7 +328,7 @@ const ChatArea = () => {
               >
                 {uploadedFileData.length > 0 && (
                   <div className="flex flex-wrap items-start gap-2 mb-6">
-                    {uploadedFileData.map((fileData, index) => (
+                    {uploadedFileData.map((fileData) => (
                       <div
                         onClick={() =>
                           handleOpenFileDialog(

@@ -5,7 +5,7 @@ import { Schibsted_Grotesk } from 'next/font/google';
 import './globals.css';
 import './styles.css';
 import { Toaster } from 'sonner';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { verifyToken } from '@/utils/auth';
 import { useAuthStore } from '@/store/useZustandStore';
@@ -29,14 +29,20 @@ export default function RootLayout({
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  const noSidebarPages = ['/login', '/signup', '/reset-password', '/onbording'];
+  const noSidebarPages = useMemo(() => ['/login', '/signup', '/reset-password', '/onbording'], []);
 
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true);
 
+      // Skip verification if on public pages (login, signup, etc.)
+      if (noSidebarPages.includes(pathname)) {
+        setIsLoading(false);
+        return;
+      }
+
       // Skip verification if already authenticated in store
-      if (isAuthenticated && !noSidebarPages.includes(pathname)) {
+      if (isAuthenticated) {
         setIsLoading(false);
         return;
       }
@@ -58,7 +64,7 @@ export default function RootLayout({
     };
 
     checkAuth();
-  }, [pathname, router, isAuthenticated]);
+  }, [pathname, router, isAuthenticated, noSidebarPages]);
 
   return (
     <html lang="en" className={`${fustat.variable}`}>

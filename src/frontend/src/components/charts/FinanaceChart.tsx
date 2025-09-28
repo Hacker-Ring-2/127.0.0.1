@@ -282,7 +282,7 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
         );
         setPredictedChartData((prev) => [
           ...prev,
-          { symbol: symbol, data: response.data.combined_chart || [] },
+          { symbol: symbol, data: (response as any).combined_chart || [] },
         ]);
       }
     } catch (error: any) {
@@ -437,7 +437,7 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
                     />
 
                     <Tabs
-                      value={activeTab.find((tab) => tab.symbol === realtimeData.symbol)?.activeTab}
+                      value={activeTab.find((tab) => tab.symbol === realtimeData.symbol)?.activeTab || 'historical'}
                       onValueChange={(value) =>
                         handleActiveTab(
                           value,

@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
@@ -24,14 +23,7 @@ import { cn } from '@/lib/utils';
 interface ApiResponse {
   success: boolean;
   message: string;
-  data?: any;
-}
-
-// Configuration for API endpoints
-interface ApiConfig {
-  sendOtpEndpoint: string;
-  verifyOtpEndpoint: string;
-  resetPasswordEndpoint: string;
+  data?: Record<string, unknown>;
 }
 
 // Component props
@@ -164,17 +156,18 @@ export function OtpPasswordResetDialog({ open, onOpenChange,OTP }: OtpPasswordRe
     setLoading(true);
 
     try {
-      const response = await axios.post(API_ENDPOINTS.SEND_VERIFICATION_OTP, {
+      await axios.post(API_ENDPOINTS.SEND_VERIFICATION_OTP, {
         email,
         purpose: 'password_reset',
       });
 
-      const data: ApiResponse = response.data;
-
       setStage(DialogStage.OTP);
       toast.success(`A 6-digit OTP has been sent to your email`);
-    } catch (error: any) {
-      setErrors({ email: error?.response?.data?.detail || 'something, went wrong' });
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'something went wrong'
+        : 'something went wrong';
+      setErrors({ email: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -192,17 +185,18 @@ export function OtpPasswordResetDialog({ open, onOpenChange,OTP }: OtpPasswordRe
     setLoading(true);
 
     try {
-      const response = await axios.post(API_ENDPOINTS.VERIFY_OTP, {
+      await axios.post(API_ENDPOINTS.VERIFY_OTP, {
         email,
         otp,
       });
 
-      const data: ApiResponse = response.data;
-
       setStage(DialogStage.PASSWORD);
       toast.success('Please enter your new password');
-    } catch (error: any) {
-      setErrors({ otp: error.response?.data?.detail || 'Invalid OTP' });
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Invalid OTP'
+        : 'Invalid OTP';
+      setErrors({ otp: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -235,8 +229,11 @@ export function OtpPasswordResetDialog({ open, onOpenChange,OTP }: OtpPasswordRe
       } else {
         setErrors({ password: data.message || 'Failed to update password' });
       }
-    } catch (error: any) {
-      setErrors({ password: error?.response?.data?.detail || 'something, went wrong' });
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'something went wrong'
+        : 'something went wrong';
+      setErrors({ password: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -321,7 +318,7 @@ export function OtpPasswordResetDialog({ open, onOpenChange,OTP }: OtpPasswordRe
     <div className="space-y-4">
       <div className="space-y-8">
         <p className="text-sm text-muted-foreground w-full">
-          We've sent a verification code to {email}
+          We&apos;ve sent a verification code to {email}
         </p>
         <div className="flex justify-center">
           <InputOTP maxLength={6} value={otp} onChange={handleOtpChange} disabled={loading}>
@@ -539,10 +536,11 @@ export function OtpPasswordResetDialog({ open, onOpenChange,OTP }: OtpPasswordRe
         });
       }, 1000);
       toast.success(`A 6-digit OTP has been sent to your email`);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.detail || 'An unexpected error occured, Please try again later'
-      );
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'An unexpected error occurred, Please try again later'
+        : 'An unexpected error occurred, Please try again later';
+      toast.error(errorMessage);
       setTimer(0);
     } finally {
       setResendLoading(false);

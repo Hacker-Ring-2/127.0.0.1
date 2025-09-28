@@ -18,6 +18,10 @@ from src.backend.models.model import *
 from src.backend.models.app_io_schemas import Onboarding
 from src.ai.agents.utils import generate_session_title
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(dotenv_path=".env", override=True)
 
 MONGO_URI = os.getenv("MONGO_URI")
 FMP_API_KEY= os.getenv("FM_API_KEY")
@@ -30,7 +34,7 @@ async def init_db():
     client = AsyncIOMotorClient(MONGO_URI)
     database = client["insight_agent"]
     jwt_handler = JWT.JWTHandler("f524fdd634e89fd7a3d886564d026666b3ea46db9c77a57d68309f02190020cb", "HS256", "30")
-    await init_beanie(database=database, document_models=[MessageLog, JSONBackup, SessionLog, Users, MessageFeedback, ExternalData, SessionHistory, MessageOutput, MapData, GraphLog, Personalization, Onboarding,UploadResponse, ChartBotLogs])
+    await init_beanie(database=database, document_models=[MessageLog, JSONBackup, SessionLog, Users, MessageFeedback, ExternalData, SessionHistory, MessageOutput, MapData, GraphLog, Personalization, Onboarding,UploadResponse, ChartBotLogs, UserPreferences, PersonalizationLog])
 
 def _fetch_fmp_data(query: str) -> Union[List[Dict[str, Any]], str]:
     try:

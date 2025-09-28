@@ -12,8 +12,32 @@ interface RelatedQueriesRequest {
   ticker: string;
   exchange: string;
 }
+
+// API Response interfaces
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user_id?: string;
+}
+
+interface SignupResponse {
+  success: boolean;
+  message: string;
+  OTP?: string;
+  user_id?: string;
+}
+
+
+
+interface GenericApiResponse {
+  [key: string]: unknown;
+}
+
+interface OnboardingData {
+  [key: string]: unknown;
+}
 class ApiServices {
-  async login(username: string, password: string): Promise<any> {
+  async login(username: string, password: string): Promise<LoginResponse> {
     const formData = new FormData();
     formData.append('username', username);
     formData.append('password', password);
@@ -22,7 +46,7 @@ class ApiServices {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-    return response;
+    return response.data;
   }
 
   async isNewUser(): Promise<boolean> {
@@ -40,7 +64,7 @@ class ApiServices {
     email: string,
     // phone: string,
     password: string
-  ): Promise<any> {
+  ): Promise<SignupResponse> {
     const response = await axios.post(
       API_ENDPOINTS.SIGNUP,
       {
@@ -55,7 +79,7 @@ class ApiServices {
         },
       }
     );
-    return response;
+    return response.data;
   }
 
   async getSessionHistory(
@@ -63,8 +87,8 @@ class ApiServices {
     limit?: number,
     signal?: AbortSignal,
     keyword?: string
-  ): Promise<any> {
-    const params: Record<string, any> = { keyword: '' };
+  ): Promise<GenericApiResponse> {
+    const params: Record<string, string | number> = { keyword: '' };
 
     if (page !== undefined) params.page = page;
     if (limit !== undefined) params.limit = limit;
@@ -77,7 +101,7 @@ class ApiServices {
       }
     );
 
-    return response;
+    return response.data;
   }
 
   async getSessionTitle(
@@ -85,8 +109,8 @@ class ApiServices {
     signal: AbortSignal,
     page?: number,
     limit?: number
-  ): Promise<any> {
-    const params: Record<string, any> = { input: '' };
+  ): Promise<GenericApiResponse> {
+    const params: Record<string, string | number> = { input: '' };
 
     if (page !== undefined) params.page = page;
     if (limit !== undefined) params.limit = limit;
@@ -97,7 +121,7 @@ class ApiServices {
         signal,
       }
     );
-    return response;
+    return response.data;
   }
 
   async updatePublicSession(sessionId: string, access = 'public') {
@@ -106,7 +130,7 @@ class ApiServices {
       access_level: access,
     });
 
-    return response;
+    return response.data;
   }
 
   async updateMessageAccess(sessionId: string, messageId: string, access = 'public') {
@@ -116,7 +140,7 @@ class ApiServices {
       access_level: access,
     });
 
-    return response;
+    return response.data;
   }
 
   async fetchRelatedQueries(payload: RelatedQueriesRequest) {
@@ -161,7 +185,7 @@ class ApiServices {
     chart_session_id: string;
     session_id: string;
     user_input: string;
-    context_data: any;
+    context_data: IFinanceData[];
     ticker: string;
     exchange: string;
     name: string;
@@ -196,12 +220,12 @@ class ApiServices {
     const response = await axios.get(
       `${BASE_URL}${API_ENDPOINTS.SHARED_CONVERSATION}/${sessionId}`
     );
-    return response;
+    return response.data;
   }
 
   async getSharedMessageData(messageId: string) {
     const response = await axios.get(`${BASE_URL}${API_ENDPOINTS.SHARED_MESSAGE}/${messageId}`);
-    return response;
+    return response.data;
   }
 
   async exportResponse(messageId: string, format: string) {
@@ -231,10 +255,10 @@ class ApiServices {
       }
     );
 
-    return response;
+    return response.data;
   }
 
-  async handlePreviewFile(fileId: string): Promise<any> {
+  async handlePreviewFile(fileId: string): Promise<string> {
     try {
       const response = await axiosInstance.get(`${API_ENDPOINTS.PREVIEW_FILE}/${fileId}`, {
         responseType: 'blob', // Ensure the response is treated as a blob
@@ -259,24 +283,24 @@ class ApiServices {
     }
   }
 
-  async handleOnboardingQuestion(onBoardingData: any) {
+  async handleOnboardingQuestion(onBoardingData: OnboardingData) {
     try {
       const response = await axiosInstance.post(`${API_ENDPOINTS.USER_ONBOARDING}`, {
         ...onBoardingData,
       });
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Error in onboarding', error);
       throw error;
     }
   }
 
-  async handleStopGeneratingResponse(sessionId: string, messageId: string): Promise<any> {
+  async handleStopGeneratingResponse(sessionId: string, messageId: string): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.post(
         `${API_ENDPOINTS.STOP_GENERATING_RESPONSE}?session_id=${sessionId}&message_id=${messageId}`
       );
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Error stopping response generation:', error);
       throw error;
@@ -288,7 +312,7 @@ class ApiServices {
     symbol: string,
     messageId: string,
     companyName: string
-  ): Promise<any> {
+  ): Promise<GenericApiResponse> {
     const data = {
       ticker: ticker,
       exchange_symbol: symbol,
@@ -297,14 +321,14 @@ class ApiServices {
     };
     try {
       const response = await axiosInstance.post(`${API_ENDPOINTS.STOCK_PREDICTION}`, data);
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Error fetching stock prediction:', error);
       throw error;
     }
   }
 
-  async handleAccountDelete(): Promise<any> {
+  async handleAccountDelete(): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.delete(`user`);
       return response.data;
@@ -314,7 +338,7 @@ class ApiServices {
     }
   }
 
-  async handleFetchStockSession(sessionId: string): Promise<any> {
+  async handleFetchStockSession(sessionId: string): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.get(`chat/session/${sessionId}`);
       return response.data;
@@ -324,11 +348,11 @@ class ApiServices {
     }
   }
 
-  async getUserDetails(): Promise<any> {
+  async getUserDetails(): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.get(`${API_ENDPOINTS.GET_USER_DETAILS}`);
       console.log(response);
-      return response;
+      return response.data;
     } catch (error) {
       console.log(error);
       throw error;
@@ -339,15 +363,15 @@ class ApiServices {
     document_id: string,
     version_number: number,
     full_content: string
-  ): Promise<any> {
+  ): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.post(`${API_ENDPOINTS.CANVAS_UPDATE_MARKDOWN}`, {
         document_id,
         version_number,
         full_content,
       });
-      return response;
-    } catch (error: any) {
+      return response.data;
+    } catch (error: unknown) {
       console.error(error);
       throw error;
     }
@@ -357,27 +381,27 @@ class ApiServices {
     document_id: string,
     version_number: number,
     format: string
-  ): Promise<any> {
+  ): Promise<GenericApiResponse> {
     try {
-      const response = axiosInstance.post(`${API_ENDPOINTS.DOWNLOAD_CANVAS_DATA}`, {
+      const response = await axiosInstance.post(`${API_ENDPOINTS.DOWNLOAD_CANVAS_DATA}`, {
         document_id,
         version_number,
         format,
       });
-      return response;
-    } catch (error: any) {
+      return response.data;
+    } catch (error: unknown) {
       console.error(error);
       throw error;
     }
   }
 
-  async getCanvasVersion(document_id: string, version_number: number): Promise<any> {
+  async getCanvasVersion(document_id: string, version_number: number): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.get(
         `${API_ENDPOINTS.GET_CANVAS_VERSION}/${document_id}/version/${version_number}`
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching canvas version:', error);
       throw error;
     }
@@ -388,7 +412,7 @@ class ApiServices {
     version_number: number,
     session_id: string,
     message_id: string
-  ): Promise<any> {
+  ): Promise<GenericApiResponse> {
     try {
       const response = await axiosInstance.post(
         `${API_ENDPOINTS.CANVAS_MAKE_VERSION_LATEST}/${document_id}/make-version-latest/${version_number}`,
@@ -397,8 +421,8 @@ class ApiServices {
           message_id,
         }
       );
-      return response;
-    } catch (error: any) {
+      return response.data;
+    } catch (error: unknown) {
       console.error('Error making canvas version latest:', error);
       throw error;
     }
@@ -409,12 +433,12 @@ class ApiServices {
     version_number: number,
     session_id: string,
     message_id: string
-  ): Promise<any> {
+  ): Promise<GenericApiResponse> {
     try {
       const apiUrl = API_ENDPOINTS.CANVAS_MAKE_VERSION_LATEST_WITH_ID(docId, version_number);
       const response = await axiosInstance.post(apiUrl, { session_id, message_id });
-      return response;
-    } catch (error: any) {
+      return response.data;
+    } catch (error: unknown) {
       console.error('Error updating current version of canvas data:', error);
       throw error;
     }

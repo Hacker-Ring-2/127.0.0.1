@@ -67,11 +67,14 @@ if(OTP){
         ...registerationData,
         full_name: registerationData.fullName,
       });
-      setOtp(response?.data?.OTP);
+      setOtp(response?.data?.OTP || '');
       setTimer(30);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setTimer(0);
-      setErrors({ otp: error?.response?.data?.detail || 'Network Error, Please try again later' });
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Network Error, Please try again later'
+        : 'Network Error, Please try again later';
+      setErrors({ otp: errorMessage });
     } finally {
       setResendLoading(false);
     }
@@ -108,8 +111,11 @@ if(OTP){
       Cookies.set('access_token', response.data.access_token);
       router.push('/onboarding');
       toast.success('Registeration Successful');
-    } catch (error: any) {
-      setErrors({ otp: error.response?.data?.detail || 'Invalid OTP' });
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Invalid OTP'
+        : 'Invalid OTP';
+      setErrors({ otp: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -136,7 +142,7 @@ if(OTP){
         <div className="space-y-4 pt-4">
           <div className="space-y-8">
             <p className="text-sm text-muted-foreground w-full">
-              We've sent a verification code to {registerationData.email}
+              We&apos;ve sent a verification code to {registerationData.email}
             </p>
             <div className="flex items-center justify-center">
               <InputOTP maxLength={6} value={otp} onChange={handleOtpChange} disabled={loading}>

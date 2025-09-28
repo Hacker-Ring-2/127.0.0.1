@@ -8,9 +8,9 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 const Plot = dynamic(
   () =>
-    import('react-plotly.js/factory').then((mod) => {
-      const Plotly = require('plotly.js-basic-dist');
-      return mod.default(Plotly);
+    import('react-plotly.js/factory').then(async (mod) => {
+      const Plotly = await import('plotly.js-basic-dist');
+      return mod.default(Plotly.default || Plotly);
     }),
   { ssr: false }
 );
@@ -18,7 +18,6 @@ const Plot = dynamic(
 
 const PlotlyChart: React.FC<PlotlyChartProps> = ({
   chartData,
-  width = '100%',
   height = 550,
   chartType = null,
   showTitle = true,
@@ -70,7 +69,7 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
   };
 
   // Generate responsive layout
-  let layout: any = {
+  const layout: any = {
     title:
       showTitle && chart_title
         ? {
@@ -122,7 +121,9 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
         // Show a tick if it's on the interval OR if it's the very last one.
         if (index % tickSpacing === 0 || index === totalDataPoints - 1) {
           tickvals.push(index);
-          const formattedLabel = label.replace(/\b\d{4}\b/, (year) => `${year.slice(-2)}`);
+          // Add null safety check for label
+          const safeLabel = label || '';
+          const formattedLabel = safeLabel.replace(/\b\d{4}\b/, (year) => `${year.slice(-2)}`);
           ticktext.push(formattedLabel);
         }
       });

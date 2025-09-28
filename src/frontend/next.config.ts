@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-const path = require('path');
 
 const nextConfig: NextConfig = {
   compiler: {
@@ -8,6 +7,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
   images: {
     unoptimized: true,

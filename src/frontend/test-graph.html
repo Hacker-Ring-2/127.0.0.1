@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Test</title>
+</head>
+<body>
+    <h1>Graph Rendering Test</h1>
+    
+    <h2>Test Case 1: Current Backend Format (Plain Text)</h2>
+    <div id="test-content">
+        <p>Here is some sample data:</p>
+        
+        <p>graph {"chart_collection": [{"chart_type": "lines", "chart_title": "Test Chart", "x_label": "Date", "y_label": "Value", "data": [{"date": "2025-01-01", "value": 100}, {"date": "2025-01-02", "value": 150}]}]} &lt;END_OF_GRAPH&gt;</p>
+        
+        <p>More content after the graph.</p>
+    </div>
+    
+    <h2>Test Case 2: Recommended Format (Code Block)</h2>
+    <pre><code class="language-graph">
+{"chart_collection": [{"chart_type": "bar", "chart_title": "Test Bar Chart", "x_label": "Category", "y_label": "Count", "data": [{"category": "A", "count": 10}, {"category": "B", "count": 20}]}]}
+&lt;END_OF_GRAPH&gt;
+    </code></pre>
+    
+    <script>
+        console.log('Test page loaded');
+        console.log('Content:', document.getElementById('test-content').innerHTML);
+    </script>
+</body>
+</html>
