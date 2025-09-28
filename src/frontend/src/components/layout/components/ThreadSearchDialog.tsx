@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search } from 'lucide-react';
 import { SessionHistoryData } from '../Sidebar';
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { debounce } from '@/utils/utility';
 import { useRouter } from 'next/navigation';
 import LoaderComponent from '@/components/Loader';
-import { handlePaginationData } from '@/utils/pagination';
+import { handlePaginationData, PaginationResponse } from '@/utils/pagination';
 import { useSessionHistoryStore } from '@/store/useSessionHistory';
 
 interface ISearchThreadsDialog {
@@ -30,6 +30,48 @@ export const SearchThreadsDialog: React.FC<ISearchThreadsDialog> = ({ open, onOp
   const abortController = useRef<AbortController | null>(null);
   const lastFetchRef = useRef<{ input: string; page: number } | null>(null);
 
+  const getThreadTitle = useCallback(async (input: string, page: number): Promise<void> => {
+    if (
+      historyLoading ||
+      (!hasMoreRef.current && page !== 1) ||
+      (lastFetchRef.current?.input === input && lastFetchRef.current?.page === page)
+    ) {
+      return;
+    }
+
+    lastFetchRef.current = { input, page };
+    setHistoryLoading(true);
+
+    try {
+      abortController.current?.abort();
+      abortController.current = new AbortController();
+
+      const response = await ApiServices.getSessionTitle(
+        input,
+        abortController.current.signal,
+        page,
+        10
+      );
+
+      if (response.data && response.data.data) {
+        const paginationResponse: PaginationResponse = {
+          data: {
+            data: response.data.data as SessionHistoryData
+          }
+        };
+        setSessionTitlesData((prev) => handlePaginationData(paginationResponse, prev));
+        hasMoreRef.current = response.data.has_more || false;
+      }
+      pageRef.current += 1;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was cancelled');
+      }
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [historyLoading]);
+
   const debouncedGetThreadTitleRef = useRef(
     debounce((value = '', page: number) => {
       getThreadTitle(value, page);
@@ -41,10 +83,11 @@ export const SearchThreadsDialog: React.FC<ISearchThreadsDialog> = ({ open, onOp
       pageRef.current = 1;
       setSessionTitlesData(sessionHistoryData);
     }
+    const debouncedFunction = debouncedGetThreadTitleRef.current;
     return () => {
-      debouncedGetThreadTitleRef.current?.cancel?.();
+      debouncedFunction?.cancel?.();
     };
-  }, [open]);
+  }, [open, sessionHistoryData]);
 
   useEffect(() => {
     let observer: IntersectionObserver;
@@ -68,42 +111,7 @@ export const SearchThreadsDialog: React.FC<ISearchThreadsDialog> = ({ open, onOp
     });
 
     return () => observer?.disconnect();
-  }, [searchQuery, historyLoading]);
-
-  const getThreadTitle = async (input: string, page: number): Promise<void> => {
-    if (
-      historyLoading ||
-      (!hasMoreRef.current && page !== 1) ||
-      (lastFetchRef.current?.input === input && lastFetchRef.current?.page === page)
-    ) {
-      return;
-    }
-
-    lastFetchRef.current = { input, page };
-    setHistoryLoading(true);
-
-    try {
-      abortController.current?.abort();
-      abortController.current = new AbortController();
-
-      const response = await ApiServices.getSessionTitle(
-        input,
-        abortController.current.signal,
-        page,
-        10
-      );
-
-      setSessionTitlesData((prev) => handlePaginationData(response, prev));
-      hasMoreRef.current = response.data.has_more;
-      pageRef.current += 1;
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Request was cancelled');
-      }
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
+  }, [searchQuery, historyLoading, getThreadTitle]);
 
   const handleClose = (open: boolean) => {
     abortController.current?.abort();

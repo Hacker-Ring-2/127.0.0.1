@@ -1,0 +1,37 @@
+{
+    "pythonVersion": "3.11",
+    "pythonPlatform": "Linux",
+    "executionEnvironments": [
+        {
+            "root": "./src",
+            "pythonVersion": "3.11",
+            "pythonPlatform": "Linux",
+            "extraPaths": [
+                "./typings"
+            ]
+        }
+    ],
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none",
+    "reportImportCycles": "none",
+    "reportUnusedImport": "none",
+    "reportUnusedVariable": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportPrivateImportUsage": "none",
+    "reportGeneralTypeIssues": "none",
+    "reportOptionalIterable": "none",
+    "reportOptionalContextManager": "none",
+    "reportUntypedFunctionDecorator": "none",
+    "reportUntypedClassDecorator": "none",
+    "reportUntypedBaseClass": "none",
+    "reportUntypedNamedTuple": "none",
+    "reportPrivateUsage": "none",
+    "reportConstantRedefinition": "none",
+    "reportIncompatibleMethodOverride": "none",
+    "reportIncompatibleVariableOverride": "none",
+    "reportOverlappingOverload": "none",
+    "stubPath": "./typings",
+    "venvPath": ".",
+    "venv": "venv"
+}

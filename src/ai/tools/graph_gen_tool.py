@@ -9,11 +9,13 @@ from pydantic import BaseModel, Field
 from src.ai.ai_schemas.tool_structured_input import GeocodeInput
 from typing import Optional, List, Literal, Tuple, Dict
 from src.ai.tools.graph_gen_tool_system_prompt import SYSTEM_PROMPT_STRUCT_OUTPUT
-# from langchain_litellm import ChatLiteLLM
-# from langchain_community.chat_models import ChatLiteLLM
 from dotenv import load_dotenv
 from src.ai.llm.model import get_llm
 from src.ai.llm.config import GraphGenerationConfig
+
+# 🚀 IMPORT WORLD-CLASS VISUALIZER
+from src.ai.tools.world_class_visualizer import world_class_visualizer
+from src.ai.tools.smart_chart_generator import smart_chart_generator
 
 load_dotenv()
 
@@ -118,17 +120,136 @@ class StructOutputList(BaseModel):
 llm_struct_op = llm.with_structured_output(StructOutputList)
 
 
+def generate_graphs_with_retry(md_content, max_retries=2):
+    """
+    Enhanced graph generation with retry logic and smart fallback strategies.
+    Args:
+        md_content: Raw table data in markdown format
+        max_retries: Maximum number of retry attempts
+    Returns:
+        JSON string of chart configuration or "NO_CHART_GENERATED" if all attempts failed
+    """
+    print("🔄 GRAPH GENERATION WITH RETRY LOGIC")
+    print(f"   Maximum retry attempts: {max_retries}")
+    
+    for attempt in range(max_retries + 1):
+        print(f"\n🚀 Attempt {attempt + 1}/{max_retries + 1}")
+        
+        try:
+            result = generate_graphs(md_content)
+            
+            if result != "NO_CHART_GENERATED":
+                print(f"✅ SUCCESS on attempt {attempt + 1}")
+                return result
+            else:
+                print(f"❌ Attempt {attempt + 1} failed: No charts generated")
+                if attempt < max_retries:
+                    print("   🔄 Retrying with modified approach...")
+                    
+        except Exception as e:
+            print(f"❌ Attempt {attempt + 1} crashed: {e}")
+            if attempt < max_retries:
+                print("   🔄 Retrying after error...")
+    
+    print(f"💀 All {max_retries + 1} API attempts failed")
+    
+    # SMART FALLBACK: Use API-free chart generation
+    print("\n🧠 ACTIVATING SMART FALLBACK (API-FREE CHART GENERATION)")
+    print("="*70)
+    
+    try:
+        from src.ai.tools.smart_chart_generator import smart_chart_generator
+        
+        fallback_result = smart_chart_generator.generate_charts(md_content)
+        
+        if fallback_result != "NO_CHART_GENERATED":
+            print("✅ SMART FALLBACK SUCCESSFUL! Charts generated without API dependency")
+            return fallback_result
+        else:
+            print("❌ Smart fallback also failed")
+            
+    except Exception as fallback_error:
+        print(f"❌ Smart fallback crashed: {fallback_error}")
+        import traceback
+        print("📝 Fallback error details:")
+        print(traceback.format_exc())
+    
+    print("💀 All generation methods exhausted")
+    return "NO_CHART_GENERATED"
+
+
 def generate_graphs(md_content):
     """
-    Enhanced graph generation function with comprehensive debugging.
+    🚀 REVOLUTIONARY GRAPH GENERATION WITH WORLD-CLASS VISUALIZATION
+    
+    This function now uses our advanced world-class visualizer that creates
+    stunning, interactive, professional charts with actual plotting!
+    
     Args:
         md_content: Raw table data in markdown format
     Returns:
-        JSON string of chart configuration or "NO_CHART_GENERATED" if failed
+        JSON string of comprehensive chart analysis or fallback result
     """
-    print("="*80)
-    print("🔍 GRAPH GENERATION DEBUG SESSION STARTING")
-    print("="*80)
+    print("🚀" * 30)
+    print("🎨 WORLD-CLASS FINANCIAL VISUALIZATION ENGINE")
+    print("🚀" * 30)
+    
+    # First try our revolutionary world-class visualizer
+    try:
+        print("🎯 Attempting world-class visualization generation...")
+        
+        # Use the advanced visualizer that actually creates beautiful plots
+        result = world_class_visualizer.generate_advanced_financial_charts(
+            md_content, 
+            theme='professional'  # Professional theme for financial data
+        )
+        
+        if result['status'] == 'success' and result['chart_count'] > 0:
+            print(f"✨ SUCCESS! Generated {result['chart_count']} world-class visualizations")
+            print("📊 Chart types created:")
+            for chart in result['charts']:
+                print(f"   🎨 {chart['type']}: {chart['title']}")
+            
+            # Convert to the expected format for the frontend
+            formatted_result = {
+                "status": "success",
+                "visualization_engine": "world_class",
+                "chart_count": result['chart_count'],
+                "charts": result['charts'],
+                "insights": result['data_insights'],
+                "generation_method": "advanced_plotly_visualization"
+            }
+            
+            return json.dumps(formatted_result, ensure_ascii=False, indent=2)
+        
+        print("⚠️ World-class visualizer couldn't generate charts, trying fallback...")
+        
+    except Exception as e:
+        print(f"❌ World-class visualizer error: {e}")
+        print("🔄 Falling back to smart chart generator...")
+    
+    # Fallback to smart chart generator (API-free)
+    try:
+        print("🧠 Using smart chart generator as fallback...")
+        smart_result = smart_chart_generator.generate_charts(md_content)
+        
+        if smart_result != "NO_CHART_GENERATED":
+            print("✅ Smart chart generator succeeded!")
+            return smart_result
+        
+        print("⚠️ Smart chart generator also failed, trying LLM approach...")
+        
+    except Exception as e:
+        print(f"❌ Smart chart generator error: {e}")
+    
+    # Final fallback to original LLM-based approach
+    return generate_graphs_llm_fallback(md_content)
+
+def generate_graphs_llm_fallback(md_content):
+    """
+    Fallback LLM-based chart generation (original approach)
+    """
+    print("🔄 Using LLM fallback approach...")
     
     # Input validation and logging
     table = md_content
@@ -138,8 +259,23 @@ def generate_graphs(md_content):
     print(f"   - Number of lines: {len(table.splitlines())}")
     print(f"   - First 200 chars: {table[:200]}...")
     
+    # Enhanced input validation
+    if not table or len(table.strip()) == 0:
+        print("   ❌ Empty or whitespace-only input")
+        return "NO_CHART_GENERATED"
+    
+    if '|' not in table:
+        print("   ⚠️  No pipe characters detected - may not be valid markdown table")
+    
+    lines = table.splitlines()
+    data_rows = [line for line in lines if '|' in line and not all(c in '|-: ' for c in line.replace('|', ''))]
+    print(f"   - Estimated data rows: {len(data_rows)}")
+    
+    if len(data_rows) < 2:
+        print("   ⚠️  Very few data rows detected - may be insufficient for chart generation")
+    
     # Check for financial/stock data indicators
-    financial_keywords = ['stock', 'price', 'volume', 'ohlc', 'open', 'high', 'low', 'close', 'market', 'trading', 'shares']
+    financial_keywords = ['stock', 'price', 'volume', 'ohlc', 'open', 'high', 'low', 'close', 'market', 'trading', 'shares', 'ticker', 'exchange']
     is_financial_data = any(keyword.lower() in table.lower() for keyword in financial_keywords)
     print(f"   - Detected as financial/stock data: {is_financial_data}")
     
@@ -148,13 +284,20 @@ def generate_graphs(md_content):
     else:
         print("   📈 NON-FINANCIAL DATA - Will generate 1 optimized chart")
 
-    # Construct LLM prompt
+    # Construct LLM prompt with enhanced error recovery
     INPUT_PROMPT = f"""
 The table is listed below:
 
-\n{table}\n
+{table}
 
+IMPORTANT INSTRUCTIONS:
+- Convert all x-axis values to strings (even numbers like years should be quoted as "2024")
+- Ensure all y-axis values are numerical (floats)
+- Use only colors from the approved palette: #1537ba, #00a9f4, #051c2c, #82a6c9, #99e6ff, #14b8ab, #9c217d
+- Generate {'3-5 comprehensive charts' if is_financial_data else 'exactly 1 optimized chart'} for this data
+- Provide clear, professional titles and labels
 """
+    
     print(f"\n🤖 LLM Prompt Construction:")
     print(f"   - System prompt length: {len(SYSTEM_PROMPT_STRUCT_OUTPUT)} characters")
     print(f"   - Input prompt length: {len(INPUT_PROMPT)} characters")
@@ -191,33 +334,73 @@ The table is listed below:
                 print("   🔍 Possible causes: unclear data, prompt issues, or model limitations")
                 return "NO_CHART_GENERATED"
             
-            # Analyze each chart
+            # Enhanced chart validation
+            valid_charts = 0
             for idx, chart in enumerate(chart_collection):
-                print(f"\n   📊 Chart {idx + 1} Analysis:")
+                print(f"\n   📊 Chart {idx + 1} Validation:")
                 print(f"      - Chart type: {chart.get('chart_type', 'MISSING')}")
                 print(f"      - Title: {chart.get('chart_title', 'MISSING')}")
-                print(f"      - Data series count: {len(chart.get('data', []))}")
+                
+                # Validate required fields
+                required_fields = ['chart_type', 'chart_title', 'x_label', 'y_label', 'data']
+                missing_fields = [field for field in required_fields if not chart.get(field)]
+                
+                if missing_fields:
+                    print(f"      ❌ Missing required fields: {missing_fields}")
+                    continue
                 
                 # Validate chart data
                 chart_data = chart.get('data', [])
                 if not chart_data:
                     print(f"      ❌ Chart {idx + 1} has no data series")
+                    continue
+                
+                valid_series = 0
+                for data_idx, data_series in enumerate(chart_data):
+                    x_data = data_series.get('x_axis_data', [])
+                    y_data = data_series.get('y_axis_data', [])
+                    color = data_series.get('color', '')
+                    legend = data_series.get('legend_label', '')
+                    
+                    print(f"         - Series {data_idx + 1}: {len(x_data)} x-points, {len(y_data)} y-points")
+                    print(f"         - Legend: {legend}")
+                    print(f"         - Color: {color}")
+                    
+                    # Validate data series
+                    if not x_data or not y_data:
+                        print(f"         ❌ Empty x or y data in series {data_idx + 1}")
+                        continue
+                    
+                    if len(x_data) != len(y_data):
+                        print(f"         ❌ Mismatched x/y data lengths: {len(x_data)} vs {len(y_data)}")
+                        continue
+                    
+                    if not color.startswith('#') or len(color) != 7:
+                        print(f"         ⚠️  Invalid color format: {color}")
+                    
+                    valid_series += 1
+                
+                if valid_series > 0:
+                    print(f"      ✅ Chart {idx + 1} is valid with {valid_series} data series")
+                    valid_charts += 1
                 else:
-                    for data_idx, data_series in enumerate(chart_data):
-                        x_data = data_series.get('x_axis_data', [])
-                        y_data = data_series.get('y_axis_data', [])
-                        print(f"         - Series {data_idx + 1}: {len(x_data)} x-points, {len(y_data)} y-points")
-                        print(f"         - Legend: {data_series.get('legend_label', 'MISSING')}")
-                        print(f"         - Color: {data_series.get('color', 'MISSING')}")
+                    print(f"      ❌ Chart {idx + 1} has no valid data series")
+            
+            if valid_charts == 0:
+                print("   ❌ NO VALID CHARTS FOUND")
+                return "NO_CHART_GENERATED"
+            
+            print(f"   ✅ {valid_charts} out of {len(chart_collection)} charts are valid")
+                    
         else:
             print("   ❌ NO chart_collection KEY FOUND IN OUTPUT")
             return "NO_CHART_GENERATED"
 
-        # Success validation
+        # Success validation and final JSON generation
         json_output = json.dumps(dump, ensure_ascii=False)
         print(f"\n✅ GRAPH GENERATION SUCCESSFUL")
         print(f"   - Final JSON length: {len(json_output)} characters")
-        print(f"   - Charts generated: {len(chart_collection)}")
+        print(f"   - Valid charts generated: {valid_charts}")
         print(f"   - Total generation time: {generation_time:.2f} seconds")
         print("="*80)
         
@@ -229,17 +412,25 @@ The table is listed below:
         print(f"   📝 Error details: {str(e)}")
         print(f"   🔍 Error type: {type(e).__name__}")
         
-        # Enhanced error analysis
-        if "timeout" in str(e).lower():
+        # Enhanced error analysis with specific recovery suggestions
+        error_str = str(e).lower()
+        if "timeout" in error_str:
             print("   🕐 TIMEOUT ERROR - Consider reducing prompt size or using faster model")
-        elif "token" in str(e).lower():
+        elif "token" in error_str or "limit" in error_str:
             print("   🔤 TOKEN LIMIT ERROR - Prompt or output too large")
-        elif "rate" in str(e).lower():
-            print("   🚦 RATE LIMIT ERROR - Too many requests")
-        elif "api" in str(e).lower():
-            print("   🔌 API CONNECTION ERROR - Check API keys and connectivity")
+        elif "rate" in error_str:
+            print("   🚦 RATE LIMIT ERROR - Too many requests, consider implementing delays")
+        elif "503" in error_str or "unavailable" in error_str:
+            print("   🔌 SERVICE UNAVAILABLE - API service is down, consider fallback model")
+        elif "union" in error_str or "type" in error_str:
+            print("   � TYPE ERROR - Pydantic model compatibility issue")
+        elif "api" in error_str or "connection" in error_str:
+            print("   🌐 CONNECTION ERROR - Check API keys and network connectivity")
         else:
             print("   🔧 UNKNOWN ERROR - May require prompt adjustment or model change")
+        
+        # Log full error for debugging
+        print(f"   🐛 Full error trace available for debugging: {e}")
         
         print("="*80)
         return "NO_CHART_GENERATED"
@@ -299,12 +490,13 @@ class GraphGenTool(BaseTool):
 
     def _run(self, table: str) -> str:
         print(f"---TOOL CALL: graph_generation_tool \n --- \n Table: \n{table}\n --- \n")
-        output_string = generate_graphs(table)
+        # Use retry logic for enhanced reliability
+        output_string = generate_graphs_with_retry(table)
 
         if output_string == "NO_CHART_GENERATED":
             return "No chart generated; please skip creating any ```graph``` block for this table in the response."
         
-        print(f"return from generate_graphs = {output_string}")
+        print(f"return from generate_graphs_with_retry = {output_string}")
 
         return output_string
 

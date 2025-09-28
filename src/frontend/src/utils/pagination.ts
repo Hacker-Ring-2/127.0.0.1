@@ -1,6 +1,18 @@
 import { SessionHistoryData } from '@/components/layout/Sidebar';
 
-interface PaginationResponse {
+// Types
+interface TimelineItem {
+  title: string;
+  created_at: string;
+  id: string;
+}
+
+interface TimelineGroup {
+  timeline: string;
+  data: TimelineItem[];
+}
+
+export interface PaginationResponse {
   data: {
     data: SessionHistoryData;
   };
@@ -19,20 +31,20 @@ export const handlePaginationData = (
   addFrom?: ADDFROM
 ) => {
   const latestByTimeline = new Map(
-    response.data.data.map((group: any) => [group.timeline, group.data])
+    response.data.data.map((group: TimelineGroup) => [group.timeline, group.data])
   );
 
   console.log('utils', response);
 
   const updated = prev.map((prevGroup) => {
-    const newData: any = latestByTimeline.get(prevGroup.timeline);
+    const newData: TimelineItem[] | undefined = latestByTimeline.get(prevGroup.timeline);
     if (!newData) return prevGroup;
 
     // Avoid duplicates based on `id`
-    const existingIds = new Set(prevGroup.data.map((item: any) => item.id));
-    const filteredNew = newData.filter((item: any) => !existingIds.has(item.id));
+    const existingIds = new Set(prevGroup.data.map((item: TimelineItem) => item.id));
+    const filteredNew = newData.filter((item: TimelineItem) => !existingIds.has(item.id));
 
-    let newPaginationData: any;
+    let newPaginationData: TimelineItem[];
 
     if (addFrom === ADD_FORM.TOP) {
       newPaginationData = [...filteredNew, ...prevGroup.data];
@@ -49,7 +61,7 @@ export const handlePaginationData = (
   // Add new timelines not in previous data
   const existingTimelines = new Set(prev.map((g) => g.timeline));
   const newGroups = response.data.data.filter(
-    (group: any) => !existingTimelines.has(group.timeline)
+    (group: TimelineGroup) => !existingTimelines.has(group.timeline)
   );
 
   return [...updated, ...newGroups];

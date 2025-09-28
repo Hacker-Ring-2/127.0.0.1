@@ -78,8 +78,8 @@ export interface FinanceChartProps {
     chart_session_id: string
   ) => void;
   isModalView?: boolean;
-  setCurrentTickerSymbol?: React.Dispatch<React.SetStateAction<any>>;
-  setShowSpecificChartLoader?: React.Dispatch<React.SetStateAction<any>>;
+  setCurrentTickerSymbol?: React.Dispatch<React.SetStateAction<string>>;
+  setShowSpecificChartLoader?: React.Dispatch<React.SetStateAction<string[]>>;
   openSpecificChart?: string[];
   handleOpenSpecificChart?: (key: string) => void;
   financeChartModal?: boolean;
@@ -124,7 +124,7 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
   const [data, setData] = useState<IFinanceData[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
   const [modalPeriodTrigger, setModalPeriodTrigger] = useState(false);
-  const [isDelisted, setIsDelisted] = useState(false);
+  // const [isDelisted, setIsDelisted] = useState(false);
   const { windowDimension } = useWindowDimension();
   const { width: windowWidth } = windowDimension;
   const islg = windowWidth >= 1024;
@@ -141,13 +141,12 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
 
   const handleMonthlyStockChartData = useCallback(
     async (period: string, message_id: string, exchange: string, symbol: string) => {
-      const key = `${message_id}-${symbol}`;
 
       if (setCurrentTickerSymbol) {
         setCurrentTickerSymbol(symbol);
       }
       if (setShowSpecificChartLoader) {
-        setShowSpecificChartLoader((prev: any) => [...prev, key]);
+        setShowSpecificChartLoader((prev) => [...prev, messageId]);
       }
 
       try {
@@ -193,17 +192,17 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
           setLoading(false);
         }
         if (setShowSpecificChartLoader) {
-          setShowSpecificChartLoader((prev: any) => prev.filter((id: any) => id !== key));
+          setShowSpecificChartLoader((prev) => prev.filter(id => id !== messageId));
         }
       }
     },
-    [data, setCurrentTickerSymbol, setShowSpecificChartLoader]
+    [data, setCurrentTickerSymbol, setShowSpecificChartLoader, chart_data, setLoading, messageId]
   );
 
   useEffect(() => {
     setData(chart_data);
     setSelectedPeriod(chart_data?.[0]?.historical?.period?.[0] || '1M');
-    setIsDelisted(chart_data?.[0]?.historical?.is_active === false);
+    // setIsDelisted(chart_data?.[0]?.historical?.is_active === false);
   }, [chart_data]);
 
   useEffect(() => {
@@ -282,11 +281,15 @@ const FinanceChart: React.FC<FinanceChartProps> = ({
         );
         setPredictedChartData((prev) => [
           ...prev,
-          { symbol: symbol, data: (response as any).combined_chart || [] },
+          { 
+            symbol: symbol, 
+            data: ((response as { combined_chart?: IChartData[] }).combined_chart || []) as IChartData[]
+          },
         ]);
       }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Failed to fetch predictive chart data');
+    } catch (error: unknown) {
+      toast.error('Failed to fetch predictive chart data');
+      console.error('Error fetching predictive chart data:', error);
     } finally {
       setPredictedChartDataLoading((prev) => prev.filter((item) => item !== symbol));
     }

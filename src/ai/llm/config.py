@@ -225,7 +225,7 @@ class StockPredictionConfig:
     TEMPERATURE = 0.0
     
 class GraphGenerationConfig:
-    MODEL = "gemini/gemini-2.5-pro"
+    MODEL = "gemini/gemini-2.5-flash"
     TEMPERATURE = 0.1
     
 class WebSearchConfig:

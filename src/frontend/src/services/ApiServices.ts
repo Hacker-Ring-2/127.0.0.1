@@ -30,6 +30,10 @@ interface SignupResponse {
 
 
 interface GenericApiResponse {
+  data?: {
+    data: unknown;
+    has_more?: boolean;
+  };
   [key: string]: unknown;
 }
 

@@ -534,12 +534,12 @@ When processing stock market data (price, volume, OHLC, financial metrics), auto
 
 ```python
 from pydantic import BaseModel, Field
-from typing import List, Union
+from typing import List
 from typing_extensions import Literal
 
 class SingleChartData(BaseModel):
     legend_label: str = Field(description="Professional legend label (company name, metric, or time period)")
-    x_axis_data: List[Union[float, str]] = Field(description="X-axis values (years, companies, categories)")
+    x_axis_data: List[str] = Field(description="X-axis values as strings (years, companies, categories) - will be converted to appropriate types during rendering")
     y_axis_data: List[float] = Field(description="Y-axis numerical values (revenue, percentages, counts)")
     color: str = Field(description="Hex color code from approved palette ONLY", pattern="^#[0-9a-fA-F]{6}$")
 

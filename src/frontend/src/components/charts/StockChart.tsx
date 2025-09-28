@@ -2,8 +2,6 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -40,7 +38,22 @@ interface ChartDimensions {
   isReady: boolean;
 }
 
-const CustomTooltip = ({ active, payload, label, symbol }: any) => {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      high: number;
+      low: number;
+      open: number;
+      close: number;
+      volume: number;
+    };
+  }>;
+  label?: string;
+  symbol?: string;
+}
+
+const CustomTooltip = ({ active, payload, label, symbol }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-2 border rounded-md border-gray-200 shadow-md text-sm">
@@ -249,7 +262,7 @@ const StockChart: React.FC<StockChartProps> = ({
       }
 
       while (ticks.length < targetTickCount && ticks.length < dataLength) {
-        const lastTick: any = ticks[ticks.length - 1];
+        const lastTick: number = ticks[ticks.length - 1];
         ticks.push(Math.min(lastTick + 1, dataLength - 1));
       }
 
@@ -297,7 +310,7 @@ const StockChart: React.FC<StockChartProps> = ({
       const boundaryIndices = [0, chartData.length - 1];
       const idealIntervalDays = Math.floor(180 / 10);
       const idealDates = [];
-      let currentDate = new Date(firstDate);
+      const currentDate = new Date(firstDate);
 
       while (currentDate <= lastDate) {
         idealDates.push(new Date(currentDate));

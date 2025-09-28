@@ -15,6 +15,12 @@ const Plot = dynamic(
   { ssr: false }
 );
 
+interface ChartSeriesData {
+  legend_label: string;
+  x_axis_data: unknown[];
+  y_axis_data: number[];
+  color?: string;
+}
 
 const PlotlyChart: React.FC<PlotlyChartProps> = ({
   chartData,
@@ -69,7 +75,7 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
   };
 
   // Generate responsive layout
-  const layout: any = {
+  const layout: Record<string, unknown> = {
     title:
       showTitle && chart_title
         ? {
@@ -174,11 +180,11 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
   }
 
   // Generate traces based on chart type with responsive adjustments
-  let traces: any[] = [];
+  let traces: Record<string, unknown>[] = [];
 
   switch (activeChartType) {
     case "lines":
-      traces = data.map((series: any, index: number) => {
+      traces = data.map((series: ChartSeriesData, index: number) => {
         const color =
           CHART_COLOR_MAP[series.legend_label] ||
           colors[index % colors.length];
@@ -210,7 +216,7 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
 
 
     case 'bar':
-      traces = data.map((series: any, index: number) => ({
+      traces = data.map((series: ChartSeriesData, index: number) => ({
         x: series.x_axis_data,
         y: series.y_axis_data,
         type: 'bar',
@@ -230,7 +236,7 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
       break;
 
     case 'group_bar':
-      traces = data.map((series: any, index: number) => {
+      traces = data.map((series: ChartSeriesData, index: number) => {
         const color =
           CHART_COLOR_MAP[series.legend_label] ||
           colors[index % colors.length];
@@ -275,7 +281,7 @@ const PlotlyChart: React.FC<PlotlyChartProps> = ({
           hole: screenSize === 'mobile' ? 0.3 : 0.4,
           marker: {
             colors: pieData.y_axis_data.map(
-              (_: any, index: number) => colors[index % colors.length]
+              (_: number, index: number) => colors[index % colors.length]
             ),
             line: {
               color: '#FFFFFF',

@@ -4,16 +4,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { googleProtocol, createGoogleStyle } from './index.js';
 
-declare global {
-  interface Window {
-    maplibregl: any;
-  }
+interface MapInstance {
+  remove: () => void;
+  on: (event: string, callback: () => void) => void;
+  setLight: (options: { anchor: string; intensity: number }) => void;
+  getPitch: () => number;
+  getBearing: () => number;
 }
+
+
 
 const GlobeWithStars = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const threeContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
+  const map = useRef<MapInstance | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -48,7 +52,7 @@ const GlobeWithStars = () => {
     // Setup MapLibre map
     map.current = new window.maplibregl.Map({
       container: mapContainer.current,
-      style: createGoogleStyle('google', 'satellite', 'AIzaSyAQmDB_py7HWww8oPDwdngJ-apRg9lGTjA'),
+      style: createGoogleStyle('google', 'satellite', 'AIzaSyCfsmJdMVUYRhnUjjRFZC9U2X_8kgS1blM'),
       center: [23.4, 53.8],
       zoom: 2,
       pitch: 0,
@@ -56,9 +60,11 @@ const GlobeWithStars = () => {
       projection: { type: 'globe' },
     });
 
-    map.current.on('style.load', () => {
-      map.current.setLight({ anchor: 'viewport', intensity: 0.6 });
-    });
+    if (map.current) {
+      map.current.on('style.load', () => {
+        map.current?.setLight({ anchor: 'viewport', intensity: 0.6 });
+      });
+    }
 
     // Setup THREE.js renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -94,13 +100,17 @@ const GlobeWithStars = () => {
     animate();
 
     // Sync camera on move
-    map.current.on('move', () => {
-      const pitch = map.current.getPitch();
-      const bearing = map.current.getBearing();
+    if (map.current) {
+      map.current.on('move', () => {
+        if (map.current) {
+          const pitch = map.current.getPitch();
+          const bearing = map.current.getBearing();
 
-      camera.rotation.x = (-pitch * Math.PI) / 180;
-      camera.rotation.y = (-bearing * Math.PI) / 180;
-    });
+          camera.rotation.x = (-pitch * Math.PI) / 180;
+          camera.rotation.y = (-bearing * Math.PI) / 180;
+        }
+      });
+    }
 
     // Handle resize
     window.addEventListener('resize', () => {

@@ -3,17 +3,15 @@
 import { cn } from '@/lib/utils';
 import {
   ChevronDown,
-  ChevronUp,
-  Ellipsis,
   EllipsisVertical,
   PanelRightClose,
   Plus,
   Settings,
 } from 'lucide-react';
 import Image from 'next/image';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import MobileHeader from './MobileHeader';
 import ApiServices from '@/services/ApiServices';
@@ -30,20 +28,13 @@ import {
 } from '../ui/dropdown-menu';
 import { toast } from 'sonner';
 import LoaderComponent from '../Loader';
-import { handlePaginationData } from '@/utils/pagination';
+import { handlePaginationData, PaginationResponse } from '@/utils/pagination';
 import { handleDeleteSession } from '@/utils/session';
 import { useSessionHistoryStore } from '@/store/useSessionHistory';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DeleteConfirmationModal from '../Modals/deleteConfirmation';
 
 // Types
-interface ISidebarImages {
-  id: number;
-  type: string;
-  src: string;
-  activeSrc: string;
-}
-
 interface TimelineItem {
   title: string;
   created_at: string;
@@ -62,19 +53,17 @@ interface SidebarContentProps {
   handleOpenSidebar: () => void;
   sessionId: string | null;
   userName: string | null;
-  router: any;
+  router: {
+    push: (url: string) => void;
+    pathname: string;
+  };
   isMobile?: boolean;
   toggleMobileSidebar?: () => void;
   setIsMobileSidebarOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   isChartInsightChatRoute?: boolean;
 }
 
-// ApiService response type
-interface ApiResponse<T> {
-  data: T;
-  status: number;
-  statusText: string;
-}
+
 
 // Animation variants
 export const sidebarOpenVariants: Variants = {
@@ -165,14 +154,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   setIsMobileSidebarOpen = () => {},
   isChartInsightChatRoute,
 }) => {
-  const images: ISidebarImages[] = [
-    {
-      id: 1,
-      src: '/icons/search.svg',
-      type: 'icon',
-      activeSrc: '/icons/search.svg',
-    },
-  ];
+  // const images: ISidebarImages[] = [
+  //   {
+  //     id: 1,
+  //     src: '/icons/search.svg',
+  //     type: 'icon',
+  //     activeSrc: '/icons/search.svg',
+  //   },
+  // ];
   const searchParams = useSearchParams();
 
   const dropdownRef = useRef<AccountDropdownHandle>(null);
@@ -192,7 +181,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
   console.log(sessionHistoryData, 'sses');
 
-  const getSessionHistoryHandler = async (
+  const getSessionHistoryHandler = useCallback(async (
     abortController?: AbortController,
     page: number = 1,
     limit: number = LIMIT
@@ -206,10 +195,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     try {
       const response = await ApiServices.getSessionHistory(page, limit, undefined);
 
-      setIsLastPage((response as any).has_more);
+      setIsLastPage((response as { has_more?: boolean }).has_more || false);
 
       setSessionHistoryData((prev) => {
-        return handlePaginationData(response, prev);
+        return handlePaginationData(response as PaginationResponse, prev);
       });
     } catch (error) {
       if (abortController && abortController.signal.aborted) {
@@ -221,7 +210,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [isLastPage, setSessionHistoryData]);
 
   const handleDeleteSessionId = (sessionId: string) => {
     setSessionHistoryData((prev) => {
@@ -241,12 +230,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         abortController.abort();
       };
     }
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, getSessionHistoryHandler, page]);
 
-  const handlePagination = () => {
+  const handlePagination = useCallback(() => {
     getSessionHistoryHandler(undefined, page + 1, LIMIT);
     setPage(page + 1);
-  };
+  }, [getSessionHistoryHandler, page]);
 
   useEffect(() => {
     let observer: IntersectionObserver;
@@ -272,7 +261,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     });
 
     return () => observer?.disconnect();
-  }, [isSidebarOpen, sessionHistoryData]);
+  }, [isSidebarOpen, sessionHistoryData, handlePagination]);
 
   type MenuItem = {
     id: string;
@@ -608,7 +597,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isChartInsightChatRoute }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const userName = useAuthStore((state) => state.username);
   const router = useRouter();
+  const pathname = usePathname();
   const param = useSearchParams();
+
+  // Create router object with pathname for SidebarContent
+  const routerWithPathname = {
+    push: router.push,
+    pathname: pathname
+  };
 
   useEffect(() => {
     const searchParamId = param.get('search');
@@ -655,7 +651,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isChartInsightChatRoute }) => {
               handleOpenSidebar={handleOpenSidebar}
               sessionId={sessionId}
               userName={userName}
-              router={router}
+              router={routerWithPathname}
               isChartInsightChatRoute={isChartInsightChatRoute}
             />
           </AnimatePresence>
@@ -686,7 +682,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isChartInsightChatRoute }) => {
                 handleOpenSidebar={handleOpenSidebar}
                 sessionId={sessionId}
                 userName={userName}
-                router={router}
+                router={routerWithPathname}
                 isMobile={true}
                 toggleMobileSidebar={toggleMobileSidebar}
                 setIsMobileSidebarOpen={setIsMobileSidebarOpen}

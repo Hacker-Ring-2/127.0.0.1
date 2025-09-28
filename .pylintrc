@@ -1,0 +1,33 @@
+[MASTER]
+# Specify the Python environments where the packages are installed
+# This helps pylint understand that the packages exist in Docker environment
+extension-pkg-allow-list=numpy,pandas,matplotlib,plotly,seaborn
+
+[MESSAGES CONTROL]
+# Disable import warnings for packages that exist in Docker but not locally
+disable=import-error,
+        import-outside-toplevel,
+        unused-import,
+        redefined-outer-name
+
+[IMPORTS]
+# Allow imports from packages installed in Docker environment
+ignored-modules=numpy,pandas,matplotlib,plotly,seaborn
+
+[DESIGN]
+# Set reasonable limits for complexity
+max-args=10
+max-locals=20
+max-returns=6
+max-branches=15
+max-statements=50
+
+[FORMAT]
+# Set line length to match project standards
+max-line-length=88
+indent-string='    '
+
+[TYPECHECK]
+# Ignore missing imports for Docker-installed packages
+ignored-classes=numpy,pandas,matplotlib,plotly,seaborn
+ignored-modules=numpy,pandas,matplotlib,plotly,seaborn

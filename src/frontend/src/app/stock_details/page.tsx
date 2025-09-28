@@ -48,12 +48,12 @@ export default function ChartInsights() {
 
   const { windowDimension } = useWindowDimension();
   const { width: windowWidth } = windowDimension;
-  const [predictedChartData, setPredictedChartData] = useState([]);
+  const [predictedChartData, setPredictedChartData] = useState<unknown[]>([]);
   const isActive = predictedChartData.length > 0 && data.length > 0;
 
   const islg = windowWidth >= 1024;
 
-  const getRelatedQueries = async () => {
+  const getRelatedQueries = useCallback(async () => {
     try {
       const payload = {
         ticker,
@@ -69,24 +69,25 @@ export default function ChartInsights() {
         messageId,
         data?.[0]?.realtime?.name || ''
       );
-      setPredictedChartData((response as any).combined_chart || []);
+      setPredictedChartData((response as { combined_chart?: unknown[] }).combined_chart || []);
       const res = await ApiServices.fetchRelatedQueries(payload);
       setQuestions(res.related_queries);
-    } catch (error) {
+    } catch (error: unknown) {
       toast('something went wrong, please try again');
+      console.error('Error in getRelatedQueries:', error);
     }
-  };
+  }, [ticker, exchange, data, messageId, chart_session_id]);
 
   useEffect(() => {
     if (data.length > 0 && chart_session_id && messageId) {
       getRelatedQueries();
     }
-  }, [data, chart_session_id, messageId]);
+  }, [data, chart_session_id, messageId, getRelatedQueries]);
 
   useEffect(() => {
     if (!messageId && !chart_session_id) return;
 
-    const formatChatHistory = (history: any[]): ChatMessage[] => {
+    const formatChatHistory = (history: Array<{ user_input: string; response: string }>): ChatMessage[] => {
       return history.flatMap((item) => [
         { type: Roles.USER, message: item.user_input },
         { type: Roles.ASSISTANT, message: item.response },
@@ -109,7 +110,7 @@ export default function ChartInsights() {
 
       getSessionHistory();
     }
-  }, [chart_session_id]);
+  }, [chart_session_id, messageId]);
 
   useEffect(() => {
     if (!messageId && !chart_session_id) return;
@@ -133,7 +134,7 @@ export default function ChartInsights() {
 
       fetchChartData();
     }
-  }, [data, messageId, setData, chart_session_id]);
+  }, [data, messageId, setData, chart_session_id, exchange, selectedPeriod, ticker]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -178,7 +179,7 @@ export default function ChartInsights() {
         }
       });
     },
-    [data, exchange, messageId, sessionId, ticker, predictedChartData]
+    [data, exchange, messageId, sessionId, ticker, predictedChartData, chart_session_id]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

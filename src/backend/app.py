@@ -56,6 +56,15 @@ async def get():
 
 @app.get("/{url:path}")
 async def chat_redirect(url: str):
+    # Handle _next static files correctly
+    try:
+        if url.startswith("_next/"):
+            file_path = f"out/{url}"
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+    except Exception as e:
+        print(f"Error checking or serving {url}: {e}")
+    
     try:
         if url.startswith("public/") and os.path.exists(url):
             return FileResponse(url)
