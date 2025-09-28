@@ -19,6 +19,14 @@
 # Ignore logs files
 graph_logs/*
 
+# Ignore Next.js build and cache files
+**/.next/
+**/.next
+.next/
+.next
+**/trace
+trace
+
 chart_bot/cryptlist.json
 
 # Ignore test files
@@ -56,3 +64,4 @@ selenium_driver/
 nginx/
 pygments_style.css
 katex.min.css
+.env.local
