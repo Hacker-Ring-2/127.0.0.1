@@ -10,6 +10,14 @@ from src.backend.api.auth import router as auth_router
 from src.backend.api.session import router as session_router
 from src.backend.api.user import router as user_router
 from src.backend.api.chat import router as chat_router
+
+# Import preference API if available
+try:
+    from src.backend.api.preference_api import router as preference_router
+    PREFERENCE_API_AVAILABLE = True
+except ImportError:
+    preference_router = None
+    PREFERENCE_API_AVAILABLE = False
 import os
 
 stock_agent = StockAnalysisAgent()
@@ -34,6 +42,13 @@ app.include_router(auth_router)
 app.include_router(session_router)
 app.include_router(user_router)
 app.include_router(chat_router)
+
+# Include preference API if available
+if PREFERENCE_API_AVAILABLE:
+    app.include_router(preference_router, prefix="/api/preferences", tags=["preferences"])
+    print("✅ Preference-based response system API loaded successfully")
+else:
+    print("⚠️ Preference system API not available - using standard responses")
 
 @app.get("/", response_class=HTMLResponse)
 async def get():

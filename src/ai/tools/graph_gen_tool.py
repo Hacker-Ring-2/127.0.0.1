@@ -1,9 +1,9 @@
 import requests
 import json
 import random
+import time
 from langchain_core.tools import tool, BaseTool
 from typing import List, Literal, Type, Dict
-import time
 import os 
 from pydantic import BaseModel, Field
 from src.ai.ai_schemas.tool_structured_input import GeocodeInput
@@ -112,40 +112,136 @@ class StructOutput(BaseModel):
     
 
 class StructOutputList(BaseModel):
-    chart_collection: List[StructOutput] = Field(description="List of individual chart configurations to be generated from the input data. Each StructOutput represents one chart with its data and metadata. Don't put more than 1 element in this List.", max_length=1)
+    chart_collection: List[StructOutput] = Field(description="List of individual chart configurations to be generated from the input data. Each StructOutput represents one chart with its data and metadata. For STOCK/FINANCIAL data, generate 3-5 charts for comprehensive analysis. For NON-FINANCIAL data, generate exactly 1 chart.", min_length=1, max_length=5)
 
 
 llm_struct_op = llm.with_structured_output(StructOutputList)
 
 
 def generate_graphs(md_content):
+    """
+    Enhanced graph generation function with comprehensive debugging.
+    Args:
+        md_content: Raw table data in markdown format
+    Returns:
+        JSON string of chart configuration or "NO_CHART_GENERATED" if failed
+    """
+    print("="*80)
+    print("🔍 GRAPH GENERATION DEBUG SESSION STARTING")
+    print("="*80)
+    
+    # Input validation and logging
     table = md_content
+    print(f"📊 Input Data Analysis:")
+    print(f"   - Raw input length: {len(table)} characters")
+    print(f"   - Contains pipe characters (table indicators): {'|' in table}")
+    print(f"   - Number of lines: {len(table.splitlines())}")
+    print(f"   - First 200 chars: {table[:200]}...")
+    
+    # Check for financial/stock data indicators
+    financial_keywords = ['stock', 'price', 'volume', 'ohlc', 'open', 'high', 'low', 'close', 'market', 'trading', 'shares']
+    is_financial_data = any(keyword.lower() in table.lower() for keyword in financial_keywords)
+    print(f"   - Detected as financial/stock data: {is_financial_data}")
+    
+    if is_financial_data:
+        print("   💰 FINANCIAL DATA DETECTED - Will attempt to generate 3-5 comprehensive charts")
+    else:
+        print("   📈 NON-FINANCIAL DATA - Will generate 1 optimized chart")
 
+    # Construct LLM prompt
     INPUT_PROMPT = f"""
 The table is listed below:
 
 \n{table}\n
 
 """
-    print(f"INPUT_PROMPT = {INPUT_PROMPT}")
+    print(f"\n🤖 LLM Prompt Construction:")
+    print(f"   - System prompt length: {len(SYSTEM_PROMPT_STRUCT_OUTPUT)} characters")
+    print(f"   - Input prompt length: {len(INPUT_PROMPT)} characters")
+    print(f"   - Total prompt length: {len(SYSTEM_PROMPT_STRUCT_OUTPUT + INPUT_PROMPT)} characters")
+    print(f"   - Model being used: {ggc.MODEL} with temperature: {ggc.TEMPERATURE}")
+    
     prompt = SYSTEM_PROMPT_STRUCT_OUTPUT + INPUT_PROMPT
 
+    print(f"\n🚀 Invoking LLM for graph generation...")
+    start_time = time.time()
+    
     try:
         result = llm_struct_op.invoke(prompt)
-        struct_output = result
-        print(f"Output from graph generator struct_output= {struct_output}")
-        dump = struct_output.model_dump()
-        print(f"Output from graph generator dump= {dump}")
-
-        # if the LLM returns an empty chart_collection, treat that as a failure
-        if not dump.get("chart_collection"):
-            print(f"No charts in output.")
-            return "NO_CHART_GENERATED"
+        generation_time = time.time() - start_time
+        print(f"   ✅ LLM invocation successful in {generation_time:.2f} seconds")
         
-        return json.dumps(dump, ensure_ascii=False)
-        # print(f"struct_output.model_dump() = {struct_output.model_dump()}")
+        struct_output = result
+        print(f"\n📋 LLM Raw Output Analysis:")
+        print(f"   - Output type: {type(struct_output)}")
+        print(f"   - Output object: {struct_output}")
+        
+        dump = struct_output.model_dump()
+        print(f"\n🔍 Structured Output Analysis:")
+        print(f"   - Dump type: {type(dump)}")
+        print(f"   - Contains chart_collection key: {'chart_collection' in dump}")
+        
+        if 'chart_collection' in dump:
+            chart_collection = dump.get("chart_collection", [])
+            print(f"   - Number of charts generated: {len(chart_collection)}")
+            
+            if len(chart_collection) == 0:
+                print("   ❌ EMPTY CHART COLLECTION DETECTED")
+                print("   📝 This indicates the LLM failed to generate any charts")
+                print("   🔍 Possible causes: unclear data, prompt issues, or model limitations")
+                return "NO_CHART_GENERATED"
+            
+            # Analyze each chart
+            for idx, chart in enumerate(chart_collection):
+                print(f"\n   📊 Chart {idx + 1} Analysis:")
+                print(f"      - Chart type: {chart.get('chart_type', 'MISSING')}")
+                print(f"      - Title: {chart.get('chart_title', 'MISSING')}")
+                print(f"      - Data series count: {len(chart.get('data', []))}")
+                
+                # Validate chart data
+                chart_data = chart.get('data', [])
+                if not chart_data:
+                    print(f"      ❌ Chart {idx + 1} has no data series")
+                else:
+                    for data_idx, data_series in enumerate(chart_data):
+                        x_data = data_series.get('x_axis_data', [])
+                        y_data = data_series.get('y_axis_data', [])
+                        print(f"         - Series {data_idx + 1}: {len(x_data)} x-points, {len(y_data)} y-points")
+                        print(f"         - Legend: {data_series.get('legend_label', 'MISSING')}")
+                        print(f"         - Color: {data_series.get('color', 'MISSING')}")
+        else:
+            print("   ❌ NO chart_collection KEY FOUND IN OUTPUT")
+            return "NO_CHART_GENERATED"
+
+        # Success validation
+        json_output = json.dumps(dump, ensure_ascii=False)
+        print(f"\n✅ GRAPH GENERATION SUCCESSFUL")
+        print(f"   - Final JSON length: {len(json_output)} characters")
+        print(f"   - Charts generated: {len(chart_collection)}")
+        print(f"   - Total generation time: {generation_time:.2f} seconds")
+        print("="*80)
+        
+        return json_output
+        
     except Exception as e:
-        print(f"Error in generating graphs {e}")
+        generation_time = time.time() - start_time
+        print(f"   ❌ LLM invocation failed after {generation_time:.2f} seconds")
+        print(f"   📝 Error details: {str(e)}")
+        print(f"   🔍 Error type: {type(e).__name__}")
+        
+        # Enhanced error analysis
+        if "timeout" in str(e).lower():
+            print("   🕐 TIMEOUT ERROR - Consider reducing prompt size or using faster model")
+        elif "token" in str(e).lower():
+            print("   🔤 TOKEN LIMIT ERROR - Prompt or output too large")
+        elif "rate" in str(e).lower():
+            print("   🚦 RATE LIMIT ERROR - Too many requests")
+        elif "api" in str(e).lower():
+            print("   🔌 API CONNECTION ERROR - Check API keys and connectivity")
+        else:
+            print("   🔧 UNKNOWN ERROR - May require prompt adjustment or model change")
+        
+        print("="*80)
         return "NO_CHART_GENERATED"
 
     # # tables = extract_markdown_tables_from_string(md_content)

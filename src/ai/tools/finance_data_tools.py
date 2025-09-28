@@ -20,17 +20,25 @@ from src.ai.ai_schemas.tool_structured_input import QueryRequest, SearchCompanyI
 import src.backend.db.mongodb as mongodb
 from src.ai.tools.web_search_tools import AdvancedInternetSearchTool
 # from crypto_data import get_crypto_data  
-from tavily import TavilyClient
-import yfinance as yf
-import pandas as pd
-import numpy as np
+from tavily import TavilyClient  # type: ignore
+import yfinance as yf  # type: ignore
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
+from dotenv import load_dotenv
+from pathlib import Path
+import tzlocal  # type: ignore
 
+# Load environment variables with absolute path
+project_root = Path(__file__).parent.parent.parent.parent
+env_path = project_root / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
 
 fm_api_key = os.getenv("FM_API_KEY")
 currency_api_key = os.getenv("CURRENCY_FREAK_API_KEY")
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
+print(f"DEBUG: TAVILY_API_KEY loaded: {'✅ Yes' if TAVILY_API_KEY else '❌ No'}")
+tavily_client = TavilyClient(api_key=TAVILY_API_KEY) if TAVILY_API_KEY else None
 
 
 # class SearchCompanyInfoTool(BaseTool):
@@ -1355,6 +1363,10 @@ class CountryFinancialInput(BaseModel):
 
 # Tavily web search function (as provided)
 def tavily_web_search(query: str, num_results: int = 2):
+    if not tavily_client:
+        print("Warning: Tavily client not available (API key not set)")
+        return {"results": [], "answer": "Tavily search not available - API key not configured"}
+    
     response = tavily_client.search(
         query=query,
         max_results=5,
